@@ -5,6 +5,7 @@ import AddMusicLocationType from './AddMusicLocationType'
 import IsClickPlayList from './IsClickPlayList'
 import IsShowAlbumName from './IsShowAlbumName'
 import IsShowInterval from './IsShowInterval'
+import AutoScanPath from './AutoScanPath'
 
 import { useI18n } from '@/lang'
 
@@ -17,6 +18,7 @@ export default memo(() => {
       <IsShowAlbumName />
       <IsShowInterval />
       <AddMusicLocationType />
+      <AutoScanPath />
     </Section>
   )
 })

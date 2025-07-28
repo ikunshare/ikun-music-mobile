@@ -1,8 +1,9 @@
 {
-  "extends": "@react-native/typescript-config/tsconfig.json" /* Recommended React Native TSConfig base */,
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig.json to read more about this file */
-
+    "target": "es2017",
+    "lib": ["es2017"],
+    "jsx": "react-jsx",
     "module": "ESNext",
     "types": ["react-native", "node"],
     /* Completeness */

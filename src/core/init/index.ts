@@ -14,6 +14,38 @@ import settingState from '@/store/setting/state'
 import { checkUpdate } from '@/core/version'
 import { bootLog } from '@/utils/bootLog'
 import { cheatTip } from '@/utils/tools'
+import { handleImportMediaFile } from '@/screens/Home/Views/Mylist/MyList/listAction'
+import { getUserLists } from '@/core/list'
+import { LIST_IDS } from '@/config/constant'
+
+const initAutoScan = async () => {
+  const autoScanPaths = settingState.setting['list.autoScanPaths']
+  if (!autoScanPaths?.length) return
+
+  const listId = 'auto_scan_list'
+  const userLists = await getUserLists()
+  let localList = userLists.find(l => l.id === listId)
+  if (!localList) {
+    // 如果本地列表不存在，则创建一个
+    const newList = {
+      name: '我的本地音乐',
+      id: listId,
+      source: 'local' as const,
+      sourceListId: '',
+      list: [],
+      position: -1,
+      locationUpdateTime: null,
+    }
+    // @ts-expect-error
+    await global.list_event.createUserList([newList])
+    localList = newList
+  }
+
+
+  for (const path of autoScanPaths) {
+    await handleImportMediaFile(localList, path)
+  }
+}
 
 let isFirstPush = true
 const handlePushedHomeScreen = async () => {
@@ -59,6 +91,9 @@ export default async () => {
   bootLog('Data inited.')
   await initCommonState(setting)
   bootLog('Common State inited.')
+
+  void initAutoScan()
+  bootLog('Auto Scan inited.')
 
   void initSync(setting)
   bootLog('Sync inited.')
