@@ -65,6 +65,7 @@ const defaultSetting: LX.AppSetting = {
   'list.isShowInterval': true,
   'list.isSaveScrollLocation': true,
   'list.addMusicLocationType': 'top',
+  'list.autoScanPaths': [],
 
   'download.fileName': '歌名 - 歌手',
 

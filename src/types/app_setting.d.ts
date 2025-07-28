@@ -337,6 +337,11 @@ declare global {
       'list.addMusicLocationType': AddMusicLocationType
 
       /**
+       * 自动扫描路径
+       */
+      'list.autoScanPaths': string[]
+
+      /**
        * 文件命名方式
        */
       'download.fileName': '歌名 - 歌手' | '歌手 - 歌名' | '歌名'
