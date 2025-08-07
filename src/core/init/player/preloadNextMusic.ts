@@ -66,8 +66,8 @@ export default () => {
     }
   }
 
-  global.app_event.on('setProgress', setProgress)
-  global.app_event.on('musicToggled', handleSetPlayInfo)
-  global.state_event.on('configUpdated', handleConfigUpdated)
+  global.app_event?.on?.('setProgress', setProgress)
+  global.app_event?.on?.('musicToggled', handleSetPlayInfo)
+  global.state_event?.on?.('configUpdated', handleConfigUpdated)
   global.state_event.on('playProgressChanged', handlePlayProgressChanged)
 }
