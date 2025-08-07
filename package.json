@@ -1,7 +1,7 @@
 {
   "name": "ikun-music-mobile",
-  "version": "1.7.6",
-  "versionCode": 70,
+  "version": "1.7.7",
+  "versionCode": 71,
   "private": true,
   "scripts": {
     "dev": "react-native run-android --active-arch-only",
