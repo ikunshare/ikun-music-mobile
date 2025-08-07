@@ -21,17 +21,16 @@ jobs:
         shell: bash
         run: |
           cd android
+          chmod +x ./gradlew
           # Check if keystore secrets are available
           if [ -n "${{ secrets.KEYSTORE_STORE_FILE_BASE64 }}" ] && [ -n "${{ secrets.KEYSTORE_STORE_FILE }}" ]; then
-            echo "Building signed APK with keystore..."
+            echo "Building signed release APK with custom keystore..."
             echo ${{ secrets.KEYSTORE_STORE_FILE_BASE64 }} | base64 --decode > app/${{ secrets.KEYSTORE_STORE_FILE }}
-            chmod +x ./gradlew
             ./gradlew assembleRelease -PMYAPP_UPLOAD_STORE_FILE='${{ secrets.KEYSTORE_STORE_FILE }}' -PMYAPP_UPLOAD_KEY_ALIAS='${{ secrets.KEYSTORE_KEY_ALIAS }}' -PMYAPP_UPLOAD_STORE_PASSWORD='${{ secrets.KEYSTORE_PASSWORD }}' -PMYAPP_UPLOAD_KEY_PASSWORD='${{ secrets.KEYSTORE_KEY_PASSWORD }}'
             rm -f app/${{ secrets.KEYSTORE_STORE_FILE }}
           else
-            echo "Building debug APK (keystore secrets not configured)..."
-            chmod +x ./gradlew
-            ./gradlew assembleDebug
+            echo "Building release APK with debug keystore (custom keystore not configured)..."
+            ./gradlew assembleRelease
           fi
 
       # Push tag to GitHub if package.json version's tag is not tagged
@@ -49,19 +48,9 @@ jobs:
 
       - name: Generate file MD5
         run: |
-          # Check if release APKs exist, otherwise use debug APKs
-          if [ -d "android/app/build/outputs/apk/release" ] && [ "$(ls -A android/app/build/outputs/apk/release/*.apk 2>/dev/null)" ]; then
-            echo "Generating MD5 for release APKs..."
-            cd android/app/build/outputs/apk/release
-            md5sum *.apk
-          elif [ -d "android/app/build/outputs/apk/debug" ] && [ "$(ls -A android/app/build/outputs/apk/debug/*.apk 2>/dev/null)" ]; then
-            echo "Generating MD5 for debug APKs..."
-            cd android/app/build/outputs/apk/debug
-            md5sum *.apk
-          else
-            echo "No APK files found!"
-            exit 1
-          fi
+          echo "Generating MD5 for release APKs..."
+          cd android/app/build/outputs/apk/release
+          md5sum *.apk
 
       - name: Upload Artifact
         uses: ./.github/actions/upload-artifact
