@@ -94,11 +94,13 @@ export const fetchData = (url, { timeout = 13_000, ...options }) => {
         .then((resp) =>
           (options.binary ? resp.blob() : resp.text()).then((text) => {
             // console.log(options, headers, text)
+            // 确保状态码在有效范围内，避免Response构造错误
+            const statusCode = resp.status === 0 ? 500 : resp.status
             return {
               headers: resp.headers.map,
               body: text,
-              statusCode: resp.status,
-              statusMessage: resp.statusText,
+              statusCode: statusCode,
+              statusMessage: resp.statusText || (resp.status === 0 ? 'Network Error' : ''),
               url: resp.url,
               ok: resp.ok,
             }
