@@ -18,6 +18,7 @@ import { setSpText } from '@/utils/pixelRatio'
 import playerState from '@/store/player/state'
 import { scrollTo } from '@/utils/scroll'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
+import { getPosition } from '@/plugins/player/utils'
 // import { screenkeepAwake } from '@/utils/nativeModules/utils'
 // import { log } from '@/utils/log'
 // import { toast } from '@/utils/tools'
@@ -271,9 +272,25 @@ export default () => {
         }, 100)
       } else {
         if (delayScrollTimeout.current) clearTimeout(delayScrollTimeout.current)
-        delayScrollTimeout.current = setTimeout(() => {
-          // 修复：跳转到当前播放位置对应的歌词行，而不是固定的第0行
-          handleScrollToActive(line >= 0 ? line : 0)
+        delayScrollTimeout.current = setTimeout(async () => {
+          // 修复：获取当前播放位置并跳转到对应的歌词行
+          let targetLine = line
+          if (playerState.isPlay && (line <= 0 || line >= lyricLines.length)) {
+            try {
+              const currentTime = await getPosition()
+              const timeMs = currentTime * 1000
+              // 查找当前时间对应的歌词行
+              for (let i = lyricLines.length - 1; i >= 0; i--) {
+                if (timeMs >= lyricLines[i].time) {
+                  targetLine = i
+                  break
+                }
+              }
+            } catch (error) {
+              console.log('获取播放位置失败:', error)
+            }
+          }
+          handleScrollToActive(targetLine >= 0 ? targetLine : 0)
         }, 100)
       }
     })
