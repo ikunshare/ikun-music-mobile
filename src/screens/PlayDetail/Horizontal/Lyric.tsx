@@ -234,7 +234,8 @@ export default () => {
       } else {
         if (delayScrollTimeout.current) clearTimeout(delayScrollTimeout.current)
         delayScrollTimeout.current = setTimeout(() => {
-          handleScrollToActive(0)
+          // 修复：跳转到当前播放位置对应的歌词行，而不是固定的第0行
+          handleScrollToActive(line >= 0 ? line : 0)
         }, 100)
       }
     })
