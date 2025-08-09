@@ -106,6 +106,8 @@ export default () => {
   const isPauseScrollRef = useRef(true)
   const scrollTimoutRef = useRef<NodeJS.Timeout | null>(null)
   const delayScrollTimeout = useRef<NodeJS.Timeout | null>(null)
+  const lyricLoadCheckInterval = useRef<NodeJS.Timeout | null>(null)
+  const lastCheckTime = useRef<number>(0)
   const lineRef = useRef({ line: 0, prevLine: 0 })
   const isFirstSetLrc = useRef(true)
   const scrollInfoRef = useRef<NativeSyntheticEvent<NativeScrollEvent>['nativeEvent'] | null>(null)
@@ -206,6 +208,10 @@ export default () => {
         clearTimeout(delayScrollTimeout.current)
         delayScrollTimeout.current = null
       }
+      if (lyricLoadCheckInterval.current) {
+        clearInterval(lyricLoadCheckInterval.current)
+        lyricLoadCheckInterval.current = null
+      }
       if (scrollTimoutRef.current) {
         clearTimeout(scrollTimoutRef.current)
         scrollTimoutRef.current = null
@@ -233,51 +239,97 @@ export default () => {
           handleScrollToActive()
         }, 100)
       } else {
+        // 清理之前的延时检测
         if (delayScrollTimeout.current) clearTimeout(delayScrollTimeout.current)
+        if (lyricLoadCheckInterval.current) clearInterval(lyricLoadCheckInterval.current)
+        
+        // 立即尝试跳转
         delayScrollTimeout.current = setTimeout(async () => {
-          // 检查歌词是否真的加载成功
-          if (!lyricLines.length) {
-            console.log('⚠️ 歌词为空，无法跳转')
-            return
-          }
-          
-          console.log('📝 歌词加载完成，共', lyricLines.length, '行歌词')
-          
-          // 修复：始终尝试获取当前播放位置并跳转到最准确的歌词行
-          let targetLine = line >= 0 ? line : 0
-          
-          try {
-            // 尝试获取当前播放位置（不管播放状态如何都尝试）
-            const currentTime = await getPosition()
-            if (currentTime > 0) {
-              const timeMs = currentTime * 1000
-              console.log('⏱️ 当前播放时间:', currentTime + 's', '(' + timeMs + 'ms)')
-              
-              // 查找当前时间对应的最准确的歌词行
-              let foundLine = 0
-              for (let i = lyricLines.length - 1; i >= 0; i--) {
-                if (timeMs >= lyricLines[i].time) {
-                  foundLine = i
-                  console.log('🎯 找到匹配歌词行:', i, '时间:', lyricLines[i].time + 'ms', '内容:', lyricLines[i].text.substring(0, 20))
-                  break
-                }
-              }
-              
-              console.log('📍 计算结果 - 目标行:', foundLine, '原始行:', line)
-              targetLine = foundLine
-            } else {
-              console.log('⏸️ 播放时间为0，使用原始line值:', line)
-            }
-          } catch (error) {
-            console.log('❌ 获取播放位置失败:', error.message)
-          }
-          
-          console.log('🚀 最终跳转到歌词行:', targetLine)
-          handleScrollToActive(targetLine)
-        }, 300) // 增加延迟确保歌词和播放器状态都稳定
+          await performLyricJump()
+        }, 300)
+        
+        // 启动持续检测机制，确保慢加载时也能正确跳转
+        startLyricLoadCheck()
       }
     })
   }, [lyricLines])
+
+  // 执行歌词跳转的核心逻辑
+  const performLyricJump = async () => {
+    // 检查歌词是否真的加载成功
+    if (!lyricLines.length) {
+      console.log('⚠️ 歌词为空，无法跳转')
+      return false
+    }
+    
+    console.log('📝 歌词加载完成，共', lyricLines.length, '行歌词')
+    
+    // 修复：始终尝试获取当前播放位置并跳转到最准确的歌词行
+    let targetLine = line >= 0 ? line : 0
+    
+    try {
+      // 尝试获取当前播放位置（不管播放状态如何都尝试）
+      const currentTime = await getPosition()
+      lastCheckTime.current = currentTime
+      
+      if (currentTime > 0) {
+        const timeMs = currentTime * 1000
+        console.log('⏱️ 当前播放时间:', currentTime + 's', '(' + timeMs + 'ms)')
+        
+        // 查找当前时间对应的最准确的歌词行
+        let foundLine = 0
+        for (let i = lyricLines.length - 1; i >= 0; i--) {
+          if (timeMs >= lyricLines[i].time) {
+            foundLine = i
+            console.log('🎯 找到匹配歌词行:', i, '时间:', lyricLines[i].time + 'ms', '内容:', lyricLines[i].text.substring(0, 20))
+            break
+          }
+        }
+        
+        console.log('📍 计算结果 - 目标行:', foundLine, '原始行:', line)
+        targetLine = foundLine
+      } else {
+        console.log('⏸️ 播放时间为0，使用原始line值:', line)
+      }
+    } catch (error) {
+      console.log('❌ 获取播放位置失败:', error.message)
+    }
+    
+    console.log('🚀 最终跳转到歌词行:', targetLine)
+    handleScrollToActive(targetLine)
+    return true
+  }
+
+  // 启动持续的歌词位置检测机制
+  const startLyricLoadCheck = () => {
+    let checkCount = 0
+    const maxChecks = 10 // 最多检测10次（约3秒）
+    
+    lyricLoadCheckInterval.current = setInterval(async () => {
+      checkCount++
+      
+      try {
+        const currentTime = await getPosition()
+        
+        // 如果播放位置有明显变化（超过0.5秒），重新跳转
+        if (Math.abs(currentTime - lastCheckTime.current) > 0.5 && currentTime > 0) {
+          console.log('🔄 检测到播放位置变化，重新跳转歌词')
+          await performLyricJump()
+        }
+        
+        // 如果检测次数达到上限，停止检测
+        if (checkCount >= maxChecks) {
+          console.log('⏹️ 歌词加载检测完成')
+          if (lyricLoadCheckInterval.current) {
+            clearInterval(lyricLoadCheckInterval.current)
+            lyricLoadCheckInterval.current = null
+          }
+        }
+      } catch (error) {
+        console.log('❌ 歌词位置检测失败:', error.message)
+      }
+    }, 300) // 每300ms检测一次
+  }
 
   useEffect(() => {
     if (line < 0) return

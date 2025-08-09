@@ -142,7 +142,9 @@ export const getCachedLyricInfo = async (
 ): Promise<LX.Player.LyricInfo | null> => {
   let lrcInfo = await getStoreLyric(musicInfo)
   // lrcInfo = {}
-  if (existTimeExp.test(lrcInfo.lyric) && lrcInfo.tlyric != null) {
+  
+  // 优化缓存逻辑：只要有有效的歌词内容就返回，不再严格要求翻译歌词等条件
+  if (existTimeExp.test(lrcInfo.lyric)) {
     // if (musicInfo.lrc.startsWith('\ufeff[id:$00000000]')) {
     //   let str = musicInfo.lrc.replace('\ufeff[id:$00000000]\n', '')
     //   commit('setLrc', { musicInfo, lyric: str, tlyric: musicInfo.tlrc, lxlyric: musicInfo.tlrc })
@@ -151,20 +153,11 @@ export const getCachedLyricInfo = async (
     //   commit('setLrc', { musicInfo, lyric: str, tlyric: musicInfo.tlrc, lxlyric: musicInfo.tlrc })
     // }
 
-    // if (lrcInfo.lxlyric == null) {
-    //   switch (musicInfo.source) {
-    //     case 'kg':
-    //     case 'kw':
-    //     case 'mg':
-    //       break
-    //     default:
-    //       return lrcInfo
-    //   }
-    // } else
-    if (lrcInfo.rlyric == null) {
-      if (!['wy', 'kg'].includes(musicInfo.source)) return lrcInfo
-    } else return lrcInfo
+    // 放宽条件：有基本歌词内容就返回，不再严格要求翻译歌词或罗马音歌词
+    // 这样可以确保网络不好时也能显示已缓存的歌词
+    return lrcInfo
   }
+  
   return null
 }
 

@@ -119,10 +119,25 @@ export const getLyricInfo = async ({
     async ({ lyricInfo, musicInfo: targetMusicInfo, isFromCache }) => {
       // lrcRequest = null
       if (isFromCache) return buildLyricInfo(lyricInfo)
+      
+      // 保存新获取的歌词到缓存
       if (targetMusicInfo.id == musicInfo.id) void saveLyric(musicInfo, lyricInfo)
       else void saveLyric(targetMusicInfo, lyricInfo)
 
       return buildLyricInfo(lyricInfo)
     }
-  )
+  ).catch(async (error) => {
+    console.log('在线歌词获取失败，尝试使用缓存:', error)
+    
+    // 在线获取失败时，尝试使用缓存的歌词
+    const cachedLyricInfo = await getCachedLyricInfo(musicInfo)
+    if (cachedLyricInfo?.lyric) {
+      console.log('使用缓存的在线歌词')
+      return buildLyricInfo(cachedLyricInfo)
+    }
+    
+    // 如果连缓存都没有，返回空歌词
+    console.log('无可用的歌词缓存，返回空歌词')
+    return buildLyricInfo({ lyric: '' })
+  })
 }

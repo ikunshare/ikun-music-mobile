@@ -209,20 +209,22 @@ export const getLyricInfo = async ({
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
 }): Promise<LX.Player.LyricInfo> => {
   if (!isRefresh && !skipFileLyric) {
-    // const lyricInfo = await getCachedLyricInfo(musicInfo)
-    // if (lyricInfo?.rawlrcInfo.lyric && lyricInfo.lyric != lyricInfo.rawlrcInfo.lyric) {
-    //   // 存在已编辑歌词
-    //   return buildLyricInfo(lyricInfo)
-    // }
+    // 优先检查已编辑的歌词缓存
+    const lyricInfo = await getCachedLyricInfo(musicInfo)
+    if (lyricInfo?.rawlrcInfo?.lyric && lyricInfo.lyric !== lyricInfo.rawlrcInfo.lyric) {
+      // 存在已编辑歌词，优先使用
+      return buildLyricInfo(lyricInfo)
+    }
 
     // 尝试读取文件内歌词
     const rawlrcInfo = await getMusicFileLyric(musicInfo.meta.filePath)
     if (rawlrcInfo) return buildLyricInfo(rawlrcInfo)
 
-    const lyricInfo = await getCachedLyricInfo(musicInfo)
+    // 如果有缓存的歌词，优先使用缓存（网络不好时的重要fallback）
     if (lyricInfo?.lyric) return buildLyricInfo(lyricInfo)
   }
 
+  // 尝试在线获取歌词，但如果失败则尝试使用缓存
   try {
     return await getOnlineOtherSourceLyricByLocal(musicInfo, isRefresh).then(
       ({ lyricInfo, isFromCache }) => {
@@ -230,7 +232,16 @@ export const getLyricInfo = async ({
         return buildLyricInfo(lyricInfo)
       }
     )
-  } catch {}
+  } catch (error) {
+    console.log('在线歌词获取失败，尝试使用缓存:', error)
+    
+    // 在线获取失败时，尝试使用缓存的歌词
+    const cachedLyricInfo = await getCachedLyricInfo(musicInfo)
+    if (cachedLyricInfo?.lyric) {
+      console.log('使用缓存的歌词')
+      return buildLyricInfo(cachedLyricInfo)
+    }
+  }
 
   onToggleSource()
   return getOtherSourceByLocal(musicInfo, async (otherSource) => {
@@ -239,12 +250,25 @@ export const getLyricInfo = async ({
       onToggleSource,
       isRefresh,
     }).then(async ({ lyricInfo, musicInfo: targetMusicInfo, isFromCache }) => {
+      // 保存获取到的歌词到缓存
       void saveLyric(musicInfo, lyricInfo)
 
       if (isFromCache) return buildLyricInfo(lyricInfo)
       void saveLyric(targetMusicInfo, lyricInfo)
 
       return buildLyricInfo(lyricInfo)
+    }).catch(async (error) => {
+      console.log('所有在线源歌词获取失败，最后尝试缓存:', error)
+      
+      // 所有在线源都失败时，最后尝试使用缓存
+      const cachedLyricInfo = await getCachedLyricInfo(musicInfo)
+      if (cachedLyricInfo?.lyric) {
+        console.log('最终使用缓存的歌词')
+        return buildLyricInfo(cachedLyricInfo)
+      }
+      
+      // 如果连缓存都没有，返回空歌词
+      return buildLyricInfo({ lyric: '' })
     })
   })
 }
