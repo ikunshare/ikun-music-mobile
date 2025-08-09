@@ -235,25 +235,46 @@ export default () => {
       } else {
         if (delayScrollTimeout.current) clearTimeout(delayScrollTimeout.current)
         delayScrollTimeout.current = setTimeout(async () => {
-          // 修复：获取当前播放位置并跳转到对应的歌词行
-          let targetLine = line
-          if (playerState.isPlay && (line <= 0 || line >= lyricLines.length)) {
-            try {
-              const currentTime = await getPosition()
+          // 检查歌词是否真的加载成功
+          if (!lyricLines.length) {
+            console.log('⚠️ 歌词为空，无法跳转')
+            return
+          }
+          
+          console.log('📝 歌词加载完成，共', lyricLines.length, '行歌词')
+          
+          // 修复：始终尝试获取当前播放位置并跳转到最准确的歌词行
+          let targetLine = line >= 0 ? line : 0
+          
+          try {
+            // 尝试获取当前播放位置（不管播放状态如何都尝试）
+            const currentTime = await getPosition()
+            if (currentTime > 0) {
               const timeMs = currentTime * 1000
-              // 查找当前时间对应的歌词行
+              console.log('⏱️ 当前播放时间:', currentTime + 's', '(' + timeMs + 'ms)')
+              
+              // 查找当前时间对应的最准确的歌词行
+              let foundLine = 0
               for (let i = lyricLines.length - 1; i >= 0; i--) {
                 if (timeMs >= lyricLines[i].time) {
-                  targetLine = i
+                  foundLine = i
+                  console.log('🎯 找到匹配歌词行:', i, '时间:', lyricLines[i].time + 'ms', '内容:', lyricLines[i].text.substring(0, 20))
                   break
                 }
               }
-            } catch (error) {
-              console.log('获取播放位置失败:', error)
+              
+              console.log('📍 计算结果 - 目标行:', foundLine, '原始行:', line)
+              targetLine = foundLine
+            } else {
+              console.log('⏸️ 播放时间为0，使用原始line值:', line)
             }
+          } catch (error) {
+            console.log('❌ 获取播放位置失败:', error.message)
           }
-          handleScrollToActive(targetLine >= 0 ? targetLine : 0)
-        }, 100)
+          
+          console.log('🚀 最终跳转到歌词行:', targetLine)
+          handleScrollToActive(targetLine)
+        }, 300) // 增加延迟确保歌词和播放器状态都稳定
       }
     })
   }, [lyricLines])
