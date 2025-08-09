@@ -66,12 +66,12 @@ const registerPlaybackService = async () => {
 
   TrackPlayer.addEventListener(TPEvent.PlaybackError, async (err: any) => {
     console.log('playback-error', err)
-    global.app_event.error()
-    global.app_event.playerError()
+    global.app_event?.error?.()
+    global.app_event?.playerError?.()
   })
 
   TrackPlayer.addEventListener(TPEvent.RemoteSeek, async ({ position }) => {
-    global.app_event.setProgress(position as number)
+    global.app_event?.setProgress?.(position as number)
   })
 
   TrackPlayer.addEventListener(TPEvent.PlaybackState, async (info) => {
@@ -85,19 +85,19 @@ const registerPlaybackService = async () => {
       case TPState.Ready:
       case TPState.Stopped:
       case TPState.Paused:
-        global.app_event.playerPause()
-        global.app_event.pause()
+        global.app_event?.playerPause?.()
+        global.app_event?.pause?.()
         break
       case TPState.Playing:
-        global.app_event.playerPlaying()
-        global.app_event.play()
+        global.app_event?.playerPlaying?.()
+        global.app_event?.play?.()
         break
       case TPState.Buffering:
-        global.app_event.pause()
-        global.app_event.playerWaiting()
+        global.app_event?.pause?.()
+        global.app_event?.playerWaiting?.()
         break
       case TPState.Connecting:
-        global.app_event.playerLoadstart()
+        global.app_event?.playerLoadstart?.()
         break
       default:
         // console.log('playback-state', info)
@@ -118,10 +118,10 @@ const registerPlaybackService = async () => {
     if (isEmpty()) {
       // console.log('====TEMP PAUSE====')
       await TrackPlayer.pause()
-      global.app_event.playerPause()
-      global.app_event.pause()
-      global.app_event.playerEnded()
-      global.app_event.playerEmptied()
+      global.app_event?.playerPause?.()
+      global.app_event?.pause?.()
+      global.app_event?.playerEnded?.()
+      global.app_event?.playerEmptied?.()
       // if (retryTrack) {
       //   if (retryTrack.musicId == retryGetUrlId) {
       //     if (++retryGetUrlNum > 1) {

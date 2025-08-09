@@ -129,12 +129,12 @@ export default () => {
   //   clearLoadingTimeout()
   // }
 
-  global.app_event.on('playerLoadstart', handleLoadstart)
+  global.app_event?.on?.('playerLoadstart', handleLoadstart)
   // global.app_event.on('playerLoadeddata', handleLoadeddata)
   // global.app_event.on('playerCanplay', handleCanplay)
-  global.app_event.on('playerPlaying', handlePlaying)
-  global.app_event.on('playerWaiting', handleWating)
-  global.app_event.on('playerEmptied', handleEmpied)
-  global.app_event.on('playerError', handleError)
-  global.app_event.on('musicToggled', handleSetPlayInfo)
+  global.app_event?.on?.('playerPlaying', handlePlaying)
+  global.app_event?.on?.('playerWaiting', handleWating)
+  global.app_event?.on?.('playerEmptied', handleEmpied)
+  global.app_event?.on?.('playerError', handleError)
+  global.app_event?.on?.('musicToggled', handleSetPlayInfo)
 }

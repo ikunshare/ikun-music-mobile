@@ -174,7 +174,7 @@ export const setMusicUrl = (
     .catch((err: any) => {
       console.log(err)
       setStatusText(err.message as string)
-      global.app_event.error()
+      global.app_event?.error?.()
       addDelayNextTimeout()
     })
     .finally(() => {
@@ -191,7 +191,7 @@ const handleRestorePlay = async (restorePlayInfo: LX.Player.SavedPlayInfo) => {
   if (!musicInfo) return
 
   setTimeout(() => {
-    global.app_event.setProgress(
+    global.app_event?.setProgress?.(
       settingState.setting['player.isSavePlayTime'] ? restorePlayInfo.time : 0,
       restorePlayInfo.maxTime
     )
@@ -207,7 +207,7 @@ const handleRestorePlay = async (restorePlayInfo: LX.Player.SavedPlayInfo) => {
     )
       return
     setMusicInfo({ pic: url })
-    global.app_event.picUpdated()
+    global.app_event?.picUpdated?.()
   })
 
   void getLyricInfo({ musicInfo })
@@ -220,7 +220,7 @@ const handleRestorePlay = async (restorePlayInfo: LX.Player.SavedPlayInfo) => {
         rlrc: lyricInfo.rlyric,
         rawlrc: lyricInfo.rawlrcInfo.lyric,
       })
-      global.app_event.lyricUpdated()
+      global.app_event?.lyricUpdated?.()
     })
     .catch((err) => {
       console.log(err)
@@ -243,7 +243,7 @@ const debouncePlay = debounceBackgroundTimer((musicInfo: LX.Player.PlayMusic) =>
     )
       return
     setMusicInfo({ pic: url })
-    global.app_event.picUpdated()
+    global.app_event?.picUpdated?.()
   })
 
   void getLyricInfo({ musicInfo })
@@ -256,7 +256,7 @@ const debouncePlay = debounceBackgroundTimer((musicInfo: LX.Player.PlayMusic) =>
         rlrc: lyricInfo.rlyric,
         rawlrc: lyricInfo.rawlrcInfo.lyric,
       })
-      global.app_event.lyricUpdated()
+      global.app_event?.lyricUpdated?.()
     })
     .catch((err) => {
       console.log(err)
@@ -296,7 +296,7 @@ const handlePlay = async () => {
   if (!musicInfo) return
 
   await setStop()
-  global.app_event.pause()
+  global.app_event?.pause?.()
 
   clearDelayNextTimeout()
   clearLoadTimeout()
@@ -661,7 +661,7 @@ export const pause = async () => {
 export const stop = async () => {
   await setStop()
   setTimeout(() => {
-    global.app_event.stop()
+    global.app_event?.stop?.()
   })
 }
 

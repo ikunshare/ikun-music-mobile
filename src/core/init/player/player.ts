@@ -24,7 +24,7 @@ export default async (setting: LX.AppSetting) => {
     }
     // resetPlayerMusicInfo()
     // global.app_event.stop()
-    global.app_event.setProgress(0)
+    global.app_event?.setProgress?.(0)
     setStatusText(global.i18n.t('player__end'))
     void playNext(true)
     // })
@@ -53,11 +53,11 @@ export default async (setting: LX.AppSetting) => {
     }
   }
 
-  global.app_event.on('play', setPlayStatus)
-  global.app_event.on('pause', setPauseStatus)
-  global.app_event.on('error', setPauseStatus)
-  global.app_event.on('stop', setStopStatus)
-  global.app_event.on('playerEnded', handleEnded)
-  global.app_event.on('picUpdated', updatePic)
-  global.state_event.on('configUpdated', handleConfigUpdated)
+  global.app_event?.on?.('play', setPlayStatus)
+  global.app_event?.on?.('pause', setPauseStatus)
+  global.app_event?.on?.('error', setPauseStatus)
+  global.app_event?.on?.('stop', setStopStatus)
+  global.app_event?.on?.('playerEnded', handleEnded)
+  global.app_event?.on?.('picUpdated', updatePic)
+  global.state_event?.on?.('configUpdated', handleConfigUpdated)
 }

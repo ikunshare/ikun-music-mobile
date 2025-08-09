@@ -145,7 +145,7 @@ export const setPlayMusicInfo = (
     const { playIndex, playerPlayIndex } = getPlayIndex(listId, musicInfo, isTempPlay)
 
     playerActions.updatePlayIndex(playIndex, playerPlayIndex)
-    global.app_event.musicToggled()
+    global.app_event?.musicToggled?.()
   }
 }
 

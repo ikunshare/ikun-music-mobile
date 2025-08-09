@@ -40,6 +40,6 @@ export default () => {
     handleListChange(['download'])
   }
 
-  global.app_event.on('myListMusicUpdate', handleListChange)
-  global.app_event.on('downloadListUpdate', handleDownloadListChange)
+  global.app_event?.on?.('myListMusicUpdate', handleListChange)
+  global.app_event?.on?.('downloadListUpdate', handleDownloadListChange)
 }

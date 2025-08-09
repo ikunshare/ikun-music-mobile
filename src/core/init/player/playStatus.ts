@@ -64,9 +64,9 @@ export default () => {
   //   buttons.lockLrc = setting.desktopLyric.isLock
   //   setButtons()
   // }
-  global.app_event.on('play', handlePlay)
-  global.app_event.on('pause', handlePause)
-  global.app_event.on('stop', handlePause)
+  global.app_event?.on?.('play', handlePlay)
+  global.app_event?.on?.('pause', handlePause)
+  global.app_event?.on?.('stop', handlePause)
   // global.app_event.on('musicToggled', handleSetPlayInfo)
   // window.app_event.on(eventTaskbarNames.setTaskbarThumbnailClip, handleSetTaskbarThumbnailClip)
   // window.app_event.on('myListMusicUpdate', throttleListChange)

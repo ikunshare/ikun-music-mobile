@@ -37,7 +37,7 @@ export const checkUpdateList = async (changedIds: string[]) => {
   await saveListMusics(
     changedIds.map((id) => ({ id, musics: allMusicList.get(id) as LX.List.ListMusics }))
   )
-  global.app_event.myListMusicUpdate(changedIds)
+  global.app_event?.myListMusicUpdate?.(changedIds)
 }
 
 // {
@@ -92,7 +92,7 @@ export class ListEvent extends Event {
       ...allListIds.map((id) => ({ id, musics: allMusicList.get(id) as LX.List.ListMusics })),
     ])
 
-    global.app_event.myListMusicUpdate(changedIds)
+    global.app_event?.myListMusicUpdate?.(changedIds)
     this.emit('list_data_overwrite', listData, isRemote)
     checkListExist(changedIds)
   }
@@ -124,7 +124,7 @@ export class ListEvent extends Event {
     await updateUserList(userLists)
     await removeListMusics(ids)
     this.emit('list_remove', ids, isRemote)
-    global.app_event.myListMusicUpdate(changedIds)
+    global.app_event?.myListMusicUpdate?.(changedIds)
 
     checkListExist(changedIds)
   }
