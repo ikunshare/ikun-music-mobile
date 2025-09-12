@@ -320,6 +320,8 @@
   "setting_download_filename_format_3": "歌名",
   "setting_download_options_title": "附加選項",
   "setting_download_write_lyric": "寫入歌詞",
+  "setting_download_write_roma_lyric": "寫入羅馬音歌詞",
+  "setting_download_write_embed_lyric": "寫入內嵌歌詞",
   "setting_download_write_metadata": "寫入標簽",
   "setting_download_write_picture": "寫入封面",
   "setting_lyric_desktop": "桌面歌詞",

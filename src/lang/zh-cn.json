@@ -329,6 +329,8 @@
   "setting_download_filename_format_3": "歌名",
   "setting_download_options_title": "附加选项",
   "setting_download_write_lyric": "写入歌词",
+  "setting_download_write_roma_lyric": "写入罗马音歌词",
+  "setting_download_write_embed_lyric": "写入内嵌歌词",
   "setting_download_write_metadata": "写入标签",
   "setting_download_write_picture": "写入封面",
   "setting_download_history": "下载历史",

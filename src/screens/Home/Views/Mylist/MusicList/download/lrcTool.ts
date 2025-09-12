@@ -1,73 +1,78 @@
-const timeFieldExp = /^(?:\[[\d:.]+\])+/g
-const timeExp = /\d{1,3}(:\d{1,3}){0,2}(?:\.\d{1,3})/g
+// src/screens/Home/Views/Mylist/MusicList/download/lrcTool.ts
 
-const t_rxp_1 = /^0+(\d+)/
-const t_rxp_2 = /:0+(\d+)/g
-const t_rxp_3 = /\.0+(\d+)/
-const formatTimeLabel = (label: string) => {
-  return label.replace(t_rxp_1, '$1').replace(t_rxp_2, ':$1').replace(t_rxp_3, '.$1')
-}
+const timeTagRegex = /\[(\d{2}:\d{2}\.\d{2,3})\]/g
 
-const filterExtendedLyricLabel = (lrcTimeLabels: Set<string>, extendedLyric: string) => {
-  const extendedLines = extendedLyric.split(/\r\n|\n|\r/)
-  const lines: string[] = []
-  for (let i = 0; i < extendedLines.length; i++) {
-    let line = extendedLines[i].trim()
-    let result = timeFieldExp.exec(line)
-    if (!result) continue
+/**
+ * 将LRC字符串解析为 Map<时间戳, 歌词行[]> 的结构
+ * @param lrcString 原始LRC字符串
+ * @returns Map<string, string[]>
+ */
+const parseLrcToMap = (lrcString: string | null | undefined): Map<string, string[]> => {
+  const map = new Map<string, string[]>()
+  if (!lrcString) return map
 
-    const timeField = result[0]
-    const text = line.replace(timeFieldExp, '').trim()
+  const lines = lrcString.split(/\r\n|\n|\r/)
+  for (const line of lines) {
+    const timeTags = line.match(timeTagRegex)
+    if (!timeTags) continue
+
+    const text = line.replace(timeTagRegex, '').trim()
     if (!text) continue
-    let times = timeField.match(timeExp)
-    if (times == null) continue
 
-    const newTimes = times.filter((time) => {
-      const timeStr = formatTimeLabel(time)
-      return lrcTimeLabels.has(timeStr)
-    })
-    if (newTimes.length != times.length) {
-      if (!newTimes.length) continue
-      line = `[${newTimes.join('][')}]${text}`
-    }
-    lines.push(line)
-  }
-
-  return lines.join('\n')
-}
-
-const parseLrcTimeLabel = (lrc: string) => {
-  const lines = lrc.split(/\r\n|\n|\r/)
-  const linesSet = new Set<string>()
-  const length = lines.length
-  for (let i = 0; i < length; i++) {
-    const line = lines[i].trim()
-    let result = timeFieldExp.exec(line)
-    if (result) {
-      const timeField = result[0]
-      const text = line.replace(timeFieldExp, '').trim()
-      if (text) {
-        const times = timeField.match(timeExp)
-        if (times == null) continue
-        for (let time of times) {
-          linesSet.add(formatTimeLabel(time))
-        }
+    for (const tag of timeTags) {
+      if (!map.has(tag)) {
+        map.set(tag, [])
       }
+      map.get(tag)!.push(text)
     }
   }
-
-  return linesSet
+  return map
 }
 
+/**
+ * 逐行合并多个LRC字符串
+ * @param lrc 主歌词
+ * @param tlrc 翻译歌词 (可选)
+ * @param rlrc 罗马音歌词 (可选)
+ * @returns 合并后的LRC字符串
+ */
 export const mergeLyrics = (
   lrc: string,
   tlrc: string | null | undefined,
   rlrc: string | null | undefined
-) => {
-  if (!tlrc && !rlrc) return lrc
+): string => {
+  if (!lrc || (!tlrc && !rlrc)) return lrc
 
-  const lrcTimeLabels = parseLrcTimeLabel(lrc)
-  if (tlrc) lrc += `\n\n${filterExtendedLyricLabel(lrcTimeLabels, tlrc)}\n`
-  if (rlrc) lrc += `\n\n${filterExtendedLyricLabel(lrcTimeLabels, rlrc)}\n`
-  return lrc
+  const mainLrcMap = parseLrcToMap(lrc)
+  const transLrcMap = parseLrcToMap(tlrc)
+  const romaLrcMap = parseLrcToMap(rlrc)
+
+  const allTimestamps = Array.from(mainLrcMap.keys())
+  allTimestamps.sort()
+
+  const resultLines: string[] = []
+
+  // 保留LRC文件头部的元数据标签 (如 [ti:], [ar:])
+  const metadataLines = lrc.split(/\r\n|\n|\r/).filter(line => !line.match(timeTagRegex) && line.startsWith('['))
+  if (metadataLines.length) {
+    resultLines.push(...metadataLines, '')
+  }
+
+  for (const timestamp of allTimestamps) {
+    const mainLines = mainLrcMap.get(timestamp) || []
+    const transLines = transLrcMap.get(timestamp) || []
+    const romaLines = romaLrcMap.get(timestamp) || []
+
+    for (const line of mainLines) {
+      resultLines.push(`${timestamp}${line}`)
+    }
+    for (const line of transLines) {
+      resultLines.push(`${timestamp}${line}`)
+    }
+    for (const line of romaLines) {
+      resultLines.push(`${timestamp}${line}`)
+    }
+  }
+
+  return resultLines.join('\n')
 }

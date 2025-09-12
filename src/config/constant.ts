@@ -66,6 +66,7 @@ export const storageDataPrefix = {
   leaderboardSetting: '@leaderboard_setting',
   songListSetting: '@songist_setting',
   searchSetting: '@search_setting',
+  lastSelectQuality: '@last_select_quality',
 
   fontSize: '@font_size',
 

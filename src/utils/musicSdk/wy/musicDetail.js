@@ -1,6 +1,6 @@
 import { httpFetch } from '../../request'
 import { weapi } from './utils/crypto'
-import { formatPlayTime } from '../../index'
+import {dateFormat, formatPlayTime} from '../../index'
 import { getBatchMusicQualityInfo } from './quality_detail'
 
 export default {
@@ -27,6 +27,7 @@ export default {
           albumId: item.al?.id,
           source: 'wy',
           interval: formatPlayTime(item.dt / 1000),
+          releaseDate: item.publishTime ? dateFormat(item.publishTime, 'Y-M-D') : null,
           songmid: item.id,
           img: item.al?.picUrl ?? '',
           lrc: null,
@@ -43,6 +44,7 @@ export default {
           albumId: item.al?.id,
           source: 'wy',
           interval: formatPlayTime(item.dt / 1000),
+          releaseDate: item.publishTime ? dateFormat(item.publishTime, 'Y-M-D') : null,
           songmid: item.id,
           img: item.al?.picUrl,
           lrc: null,

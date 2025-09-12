@@ -341,7 +341,14 @@ declare global {
        * 是否写入歌词
        */
       'download.writeLyric': boolean
-
+       /**
+         * 是否写入罗马音歌词
+       */
+      'download.writeRomaLyric': boolean
+      /**
+       * 是否内嵌歌词到音频文件
+       */
+      'download.writeEmbedLyric': boolean
       /**
        * 是否写入封面
        */

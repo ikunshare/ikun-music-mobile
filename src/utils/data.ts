@@ -37,6 +37,7 @@ const dislikeListPrefix = storageDataPrefix.dislikeList
 const userApiPrefix = storageDataPrefix.userApi
 const openStoragePathPrefix = storageDataPrefix.openStoragePath
 const selectedManagedFolderPrefix = storageDataPrefix.selectedManagedFolder
+const lastSelectQualityKey = storageDataPrefix.lastSelectQuality
 
 // const defaultListKey = listPrefix + 'default'
 // const loveListKey = listPrefix + 'love'
@@ -600,4 +601,11 @@ export const setUserApiAllowShowUpdateAlert = async (id: string, enable: boolean
   if (!targetApi) return
   targetApi.allowShowUpdateAlert = enable
   await saveData(userApiPrefix, userApis)
+}
+
+export const getLastSelectQuality = async(): Promise<LX.Quality> => {
+  return (await getData<LX.Quality>(lastSelectQualityKey)) ?? '128k'
+}
+export const saveLastSelectQuality = async(quality: LX.Quality) => {
+  await saveData(lastSelectQualityKey, quality)
 }

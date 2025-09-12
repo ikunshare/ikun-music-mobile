@@ -1,10 +1,11 @@
 import { View } from 'react-native'
-import { useState, useRef, useImperativeHandle, forwardRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useImperativeHandle, forwardRef, useMemo } from 'react'
 import ConfirmAlert, { type ConfirmAlertType } from '@/components/common/ConfirmAlert'
 import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
 import CheckBox from '@/components/common/CheckBox'
 import { handleDownload } from './listAction'
+import { getLastSelectQuality, saveLastSelectQuality } from '@/utils/data'
 
 interface TitleType {
   updateTitle: (musicInfo: LX.Music.MusicInfo) => void
@@ -45,11 +46,11 @@ export interface MusicDownloadModalType {
   show: (info: LX.Music.MusicInfo) => void
 }
 
+
 export default forwardRef<MusicDownloadModalType, MusicDownloadModalProps>(
   ({ onDownloadInfo }, ref) => {
     const alertRef = useRef<ConfirmAlertType>(null)
     const titleRef = useRef<TitleType>(null)
-    const inputRef = useRef<PositionInputType>(null)
     const selectedInfo = useRef<LX.Music.MusicInfo>(initSelectInfo as LX.Music.MusicInfo)
     const [selectedQuality, setSelectedQuality] = useState<LX.Quality>('128k')
     const [playQualityList, setPlayQualityList] = useState<MusicOption[]>([])
@@ -59,11 +60,24 @@ export default forwardRef<MusicDownloadModalType, MusicDownloadModalProps>(
       [key: string]: MusicOption
     }
 
-    const calcQualitys = () => {
-      console.log('calcQualitys')
-      console.log('calcQualitys' + selectedInfo.current.name)
-      setPlayQualityList([])
+    // 新增 useEffect 来处理音质选择逻辑
+    useEffect(() => {
+      if (!visible || !playQualityList.length) return
 
+      const applyLastQuality = async() => {
+        const lastQuality = await getLastSelectQuality()
+        const qualityExists = playQualityList.some(q => q.id === lastQuality)
+        if (qualityExists) {
+          setSelectedQuality(lastQuality)
+        } else {
+          setSelectedQuality(playQualityList[0].id) // 降级到第一个可用音质
+        }
+      }
+
+      void applyLastQuality()
+    }, [visible, playQualityList]) // 依赖于弹窗可见性和音质列表
+
+    const calcQualitys = (musicInfo: LX.Music.MusicInfo) => {
       const map = new Map()
 
       map.set('128k', global.i18n.t('128k'))
@@ -75,11 +89,10 @@ export default forwardRef<MusicDownloadModalType, MusicDownloadModalProps>(
       map.set('master', global.i18n.t('master'))
 
       // @ts-ignore
-      const qualitys = selectedInfo.current.meta.qualitys
+      const qualitys = musicInfo.meta.qualitys
 
-      let qualityMap: QualityMap = {}
-      for (let index = 0; index < qualitys.length; index++) {
-        const element = qualitys[index]
+      const qualityMap: QualityMap = {}
+      for (const element of qualitys) {
         const temp: MusicOption = {
           id: element.type,
           name: map.has(element.type) ? map.get(element.type) : '未知',
@@ -91,37 +104,37 @@ export default forwardRef<MusicDownloadModalType, MusicDownloadModalProps>(
       setPlayQualityList(Object.values(qualityMap))
     }
 
-    const handleShow = () => {
-      console.log('handleShow')
-
-      alertRef.current?.setVisible(true)
-      requestAnimationFrame(() => {
-        titleRef.current?.updateTitle(selectedInfo.current)
-        setTimeout(() => {
-          inputRef.current?.focus()
-        }, 300)
-      })
-    }
-
     useImperativeHandle(ref, () => ({
       show(info) {
         selectedInfo.current = info
-        calcQualitys()
+        titleRef.current?.updateTitle(info)
+        // 先计算并触发音质列表状态更新
+        calcQualitys(info)
+
+        // 然后显示弹窗
         if (visible) {
-          handleShow()
+          alertRef.current?.setVisible(true)
         } else {
           setVisible(true)
-          requestAnimationFrame(() => {
-            handleShow()
-          })
         }
       },
     }))
 
+    // 当弹窗组件首次挂载或重新变为可见时，显示内部Dialog
+    useEffect(() => {
+      if (visible) {
+        alertRef.current?.setVisible(true)
+      }
+    }, [visible])
+
     const handleDownloadMusic = () => {
-      setSelectedQuality('128k')
+      void saveLastSelectQuality(selectedQuality)
       alertRef.current?.setVisible(false)
       handleDownload(selectedInfo.current, selectedQuality)
+      // 下载后重置回默认值，以便下次打开时重新加载
+      setTimeout(() => {
+        setSelectedQuality('128k')
+      }, 300)
     }
 
     interface MusicOption {
@@ -132,8 +145,7 @@ export default forwardRef<MusicDownloadModalType, MusicDownloadModalProps>(
     }
 
     const useActive = (id: LX.Quality) => {
-      const isActive = useMemo(() => selectedQuality == id, [selectedQuality, id])
-      return isActive
+      return useMemo(() => selectedQuality === id, [selectedQuality, id])
     }
 
     const Item = ({ id, name }: { id: LX.Quality; name: string }) => {
@@ -155,13 +167,13 @@ export default forwardRef<MusicDownloadModalType, MusicDownloadModalProps>(
       <ConfirmAlert
         ref={alertRef}
         onConfirm={handleDownloadMusic}
-        onHide={() => inputRef.current?.setText('')}
+        onHide={() => setVisible(false) } // 隐藏时卸载组件
       >
         <View style={styles.content}>
           <Title ref={titleRef} />
           <View style={styles.list}>
             {playQualityList.map((item) => (
-              <Item name={item.name + '' + '(' + item.size + ')'} id={item.id} key={item.key} />
+              <Item name={item.name + (item.size ? ` (${item.size})` : '')} id={item.id} key={item.key} />
             ))}
           </View>
         </View>
