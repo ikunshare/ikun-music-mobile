@@ -21,7 +21,8 @@ import { getListMusicSync } from '@/utils/listManage'
 import { requestStoragePermission } from '@/utils/tools'
 import { getMusicUrl, getLyricInfo, getPicUrl } from '@/core/music/online'
 import { writeMetadata, writePic, writeLyric } from '@/utils/localMediaMetadata'
-import { downloadFile } from '@/utils/fs'
+import { downloadFile, writeFile } from '@/utils/fs'
+import {MusicMetadata} from "react-native-local-media-metadata";
 export const handlePlay = (listId: SelectInfo['listId'], index: SelectInfo['index']) => {
   void playList(listId, index)
 }
@@ -232,15 +233,43 @@ export const handleDownload = async (musicInfo: LX.Music.MusicInfo, quality: LX.
 
       if (settingState.setting['download.writeMetadata']) {
         try {
-          await writeMetadata(
-            filePath,
-            {
-              name: musicInfo.name,
-              singer: musicInfo.singer,
-              albumName: musicInfo.meta.albumName,
-            },
-            true
-          )
+          const metadata: {
+            name: string
+            singer: string
+            albumName?: string
+            year?: string
+          } = {
+            name: musicInfo.name,
+            singer: musicInfo.singer,
+            albumName: musicInfo.meta.albumName,
+          }
+
+          // 提取年份
+          if (musicInfo.releaseDate) {
+            const yearMatch = musicInfo.releaseDate.match(/^(\d{4})/)
+            if (yearMatch) {
+              metadata.year = yearMatch[1]
+            }
+          }
+
+          await writeMetadata(filePath, <MusicMetadata>metadata, true)
+          // --- 强制媒体库更新逻辑 ---
+          try {
+            const tempPath = filePath + '.tmp'
+            // 1. 重命名为临时文件
+            await RNFetchBlob.fs.mv(filePath, tempPath)
+            // 2. 扫描原路径，让媒体库认为文件已删除
+            await RNFetchBlob.fs.scanFile([{ path: filePath }])
+            // 3. 立即改回原名
+            await RNFetchBlob.fs.mv(tempPath, filePath)
+            // 4. 再次扫描原路径，让媒体库作为新文件重新索引
+            await RNFetchBlob.fs.scanFile([{ path: filePath }])
+            console.log('Media store updated successfully.')
+          } catch (err) {
+            console.error('Failed to force update media store:', err)
+            // 即使失败，也尝试一次普通扫描作为后备
+            await RNFetchBlob.fs.scanFile([{ path: filePath }])
+          }
           toast(`写入标签成功!`, 'short')
         } catch (err) {
           console.log(err)
@@ -248,17 +277,39 @@ export const handleDownload = async (musicInfo: LX.Music.MusicInfo, quality: LX.
         }
       }
 
-      if (settingState.setting['download.writeLyric']) {
+      if (settingState.setting['download.writeLyric'] || settingState.setting['download.writeRomaLyric'] || settingState.setting['download.writeEmbedLyric']) {
         try {
           const lyrics = await getLyricInfo({
-            // @ts-ignore
-            musicInfo: musicInfo,
+            musicInfo: musicInfo as LX.Music.MusicInfoOnline,
             isRefresh: true,
           })
-          const lyric = mergeLyrics(lyrics.lyric, lyrics.tlyric, lyrics.rlyric)
-          // console.log(lyric)
-          await writeLyric(filePath, lyric)
-          toast(`写入歌词成功!`, 'short')
+          const tasks = []
+          const baseFilePath = filePath.substring(0, filePath.lastIndexOf('.'))
+
+
+
+          // 写入内嵌歌词
+          if (settingState.setting['download.writeEmbedLyric']) {
+            // 内嵌歌词通常不包含罗马音
+            const embedLyricContent = mergeLyrics(lyrics.lyric, lyrics.tlyric, null)
+            if (embedLyricContent) {
+              tasks.push(writeLyric(filePath, embedLyricContent))
+            }
+          } else if (settingState.setting['download.writeLyric'] || settingState.setting['download.writeRomaLyric']) {
+            const translationLyric = settingState.setting['download.writeLyric'] ? lyrics.tlyric : null
+            const romaLyric = settingState.setting['download.writeRomaLyric'] ? lyrics.rlyric : null
+            const finalLyricContent = mergeLyrics(lyrics.lyric, translationLyric, romaLyric)
+
+            if (finalLyricContent) {
+              tasks.push(writeFile(`${baseFilePath}.lrc`, finalLyricContent))
+            }
+          }
+
+
+          if (tasks.length) {
+            await Promise.all(tasks)
+            toast('写入歌词成功!', 'short')
+          }
         } catch (err) {
           console.log(err)
           toast(`${fileName} 写入歌词失败!`, 'short')

@@ -329,6 +329,8 @@
   "setting_download_filename_format_3": "Title Only",
   "setting_download_options_title": "Additional Options",
   "setting_download_write_lyric": "Write Lyrics",
+  "setting_download_write_roma_lyric": "Write Romanized Lyrics",
+  "setting_download_write_embed_lyric": "Write Embedded Lyrics",
   "setting_download_write_metadata": "Write Tags",
   "setting_download_write_picture": "Write Cover",
   "setting_download_history": "Download History",

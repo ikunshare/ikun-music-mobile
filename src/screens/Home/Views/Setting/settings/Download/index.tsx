@@ -3,6 +3,8 @@ import { memo } from 'react'
 import Section from '../../components/Section'
 import IsEnable from './IsEnable'
 import IsWriteLyrics from './IsWriteLyrics'
+import IsWriteRomaLyrics from './IsWriteRomaLyrics'
+import IsWriteEmbedLyrics from './IsWriteEmbedLyrics'
 import IsWriteTags from './IsWriteTags'
 import IsWriteCover from './IsWriteCover'
 import FileNameFormat from './FileNameFormat'
@@ -18,6 +20,8 @@ export default memo(() => {
       <SubTitle title={t('setting_download_options_title')}>
         <IsWriteTags />
         <IsWriteLyrics />
+        <IsWriteRomaLyrics />
+        <IsWriteEmbedLyrics />
         <IsWriteCover />
       </SubTitle>
       <FileNameFormat />

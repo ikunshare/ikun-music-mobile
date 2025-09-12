@@ -67,6 +67,8 @@ const defaultSetting: LX.AppSetting = {
   'download.enable': false,
   'download.fileName': '歌名 - 歌手',
   'download.writeLyric': false,
+  'download.writeRomaLyric': false,
+  'download.writeEmbedLyric': true,
   'download.writeMetadata': false,
   'download.writePicture': false,
 
