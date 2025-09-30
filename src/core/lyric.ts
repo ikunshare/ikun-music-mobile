@@ -112,13 +112,16 @@ export const setLyric = async () => {
     await handleSetLyric(playerState.musicInfo.lrc, tlrc, rlrc)
   }
 
-  // 修复:歌词加载后立即同步到当前播放位置
-  // 无论 isPlay 状态如何,都尝试获取当前播放位置并同步歌词
-  // 如果播放器未播放,getPosition会返回0,不会有副作用
-  void getPosition().then((position) => {
-    if (position > 0) {
-      // 只有当有实际播放进度时才同步歌词
-      handlePlay(position * 1000)
-    }
-  })
+  // 修复:添加延迟确保播放器位置已更新
+  // 本地歌曲首次播放时,歌词加载可能早于播放器位置更新
+  // 延迟200ms后再获取位置并同步歌词
+  setTimeout(() => {
+    void getPosition().then((position) => {
+      // 只要播放器有位置(即使是0.1秒),就同步歌词
+      // 这样可以确保歌词从正确的位置开始
+      if (position >= 0 && playerState.isPlay) {
+        handlePlay(position * 1000)
+      }
+    })
+  }, 200)
 }
