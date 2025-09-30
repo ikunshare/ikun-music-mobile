@@ -89,12 +89,7 @@ export default async (setting: LX.AppSetting) => {
         }
     });
 
-    global.app_event?.on?.('play', () => {
-        // 延迟执行,确保播放器位置已更新
-        setTimeout(() => {
-            play();
-        }, 300);
-    });
+    global.app_event?.on?.('play', play);
     global.app_event?.on?.('pause', pause);
     global.app_event?.on?.('stop', stop);
     global.app_event?.on?.('error', pause);
