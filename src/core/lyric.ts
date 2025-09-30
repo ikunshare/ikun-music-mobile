@@ -115,9 +115,9 @@ export const setLyric = async () => {
 
   // 修复:歌词加载完成后,等待并多次尝试同步
   // 问题根源:本地歌曲首次播放时,歌词加载可能在播放器position更新之前完成
-  // 采用轮询策略:每隔200ms检查一次,直到position>0.1或超过最大尝试次数
+  // 采用轮询策略:每隔200ms检查一次,直到position>0.1或超过最大尝试次数(5秒)
   let attempts = 0
-  const maxAttempts = 10
+  const maxAttempts = 25  // 25次 * 200ms = 5秒
   const trySync = async () => {
     try {
       const playbackState = await TrackPlayer.getState()
