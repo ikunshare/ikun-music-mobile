@@ -16,6 +16,7 @@ import {
   toggleDesktopLyricRoma,
 } from '@/core/desktopLyric'
 import { getPosition } from '@/plugins/player'
+import TrackPlayer, { State as TPState } from 'react-native-track-player'
 import playerState from '@/store/player/state'
 // import settingState from '@/store/setting/state'
 
@@ -112,14 +113,16 @@ export const setLyric = async () => {
     await handleSetLyric(playerState.musicInfo.lrc, tlrc, rlrc)
   }
 
-  // 修复:handleSetLyric会将歌词播放器的isPlay设为false
-  // 如果当前正在播放,需要立即重新启动歌词同步
-  if (playerState.isPlay) {
-    // 延迟一小段时间确保歌词已完全加载
-    setTimeout(() => {
-      if (playerState.isPlay && playerState.musicInfo.id) {
-        play()
-      }
-    }, 100)
+  // 修复:歌词加载完成后,检查播放器实际状态并同步
+  // 使用TrackPlayer.getState()获取播放器真实状态,而不是依赖playerState.isPlay
+  try {
+    const playbackState = await TrackPlayer.getState()
+    if (playbackState === TPState.Playing || playbackState === TPState.Buffering) {
+      // 播放器正在播放或缓冲中,需要同步歌词
+      const position = await getPosition()
+      handlePlay(position * 1000)
+    }
+  } catch (error) {
+    console.log('setLyric同步失败:', error)
   }
 }
