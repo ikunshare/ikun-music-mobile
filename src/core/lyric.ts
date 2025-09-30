@@ -112,16 +112,14 @@ export const setLyric = async () => {
     await handleSetLyric(playerState.musicInfo.lrc, tlrc, rlrc)
   }
 
-  // 修复:歌词加载完成后,如果正在播放则触发一次暂停-播放操作
-  // 这样可以确保歌词能正确同步到当前播放位置
+  // 修复:handleSetLyric会将歌词播放器的isPlay设为false
+  // 如果当前正在播放,需要立即重新启动歌词同步
   if (playerState.isPlay) {
-    const { pause: pausePlayer } = await import('@/core/player/player')
-    await pausePlayer()
-    // 短暂延迟后恢复播放,确保状态切换生效
+    // 延迟一小段时间确保歌词已完全加载
     setTimeout(() => {
-      if (playerState.musicInfo.id) {
+      if (playerState.isPlay && playerState.musicInfo.id) {
         play()
       }
-    }, 50)
+    }, 100)
   }
 }
