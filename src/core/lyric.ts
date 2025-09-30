@@ -112,8 +112,15 @@ export const setLyric = async () => {
     await handleSetLyric(playerState.musicInfo.lrc, tlrc, rlrc)
   }
 
-  // 修复:歌词加载完成后,无条件触发play事件
-  // 这确保歌词播放器能正确启动,即使在首次播放的时序竞争情况下
-  // play()内部会检查playerState.isPlay,所以这是安全的
-  play()
+  // 修复:歌词加载完成后,获取当前播放位置并同步
+  console.log('[Lyric Debug] setLyric called, isPlay:', playerState.isPlay)
+  void getPosition().then((position) => {
+    console.log('[Lyric Debug] getPosition result:', position)
+    if (position >= 0) {
+      console.log('[Lyric Debug] Calling handlePlay with position:', position * 1000)
+      handlePlay(position * 1000)
+    } else {
+      console.log('[Lyric Debug] Position is negative, skipping handlePlay')
+    }
+  })
 }
