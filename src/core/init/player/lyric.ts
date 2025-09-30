@@ -89,16 +89,7 @@ export default async (setting: LX.AppSetting) => {
         }
     });
 
-    // 修复本地歌曲歌词定位问题:
-    // 当播放开始时,如果已有歌词则同步到当前播放位置
-    const handlePlayForLyric = () => {
-        // 延迟执行以确保歌词已加载
-        setTimeout(() => {
-            play();
-        }, 100);
-    };
-
-    global.app_event?.on?.('play', handlePlayForLyric);
+    global.app_event?.on?.('play', play);
     global.app_event?.on?.('pause', pause);
     global.app_event?.on?.('stop', stop);
     global.app_event?.on?.('error', pause);

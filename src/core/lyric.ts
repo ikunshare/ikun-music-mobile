@@ -112,5 +112,13 @@ export const setLyric = async () => {
     await handleSetLyric(playerState.musicInfo.lrc, tlrc, rlrc)
   }
 
-  if (playerState.isPlay) play()
+  // 修复:歌词加载后立即同步到当前播放位置
+  // 无论 isPlay 状态如何,都尝试获取当前播放位置并同步歌词
+  // 如果播放器未播放,getPosition会返回0,不会有副作用
+  void getPosition().then((position) => {
+    if (position > 0) {
+      // 只有当有实际播放进度时才同步歌词
+      handlePlay(position * 1000)
+    }
+  })
 }
