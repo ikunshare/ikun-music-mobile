@@ -113,16 +113,32 @@ export const setLyric = async () => {
     await handleSetLyric(playerState.musicInfo.lrc, tlrc, rlrc)
   }
 
-  // 修复:歌词加载完成后,检查播放器实际状态并同步
-  // 使用TrackPlayer.getState()获取播放器真实状态,而不是依赖playerState.isPlay
-  try {
-    const playbackState = await TrackPlayer.getState()
-    if (playbackState === TPState.Playing || playbackState === TPState.Buffering) {
-      // 播放器正在播放或缓冲中,需要同步歌词
+  // 修复:歌词加载完成后,等待并多次尝试同步
+  // 问题根源:本地歌曲首次播放时,歌词加载可能在播放器position更新之前完成
+  // 采用轮询策略:每隔200ms检查一次,直到position>0.1或超过最大尝试次数
+  let attempts = 0
+  const maxAttempts = 10
+  const trySync = async () => {
+    try {
+      const playbackState = await TrackPlayer.getState()
+      if (playbackState !== TPState.Playing && playbackState !== TPState.Buffering) {
+        return
+      }
+      
       const position = await getPosition()
-      handlePlay(position * 1000)
+      if (position > 0.1 || attempts >= maxAttempts) {
+        // position已经大于0.1秒,或者已达到最大尝试次数,进行同步
+        handlePlay(position * 1000)
+        return
+      }
+      
+      // position还是0或很小,继续等待
+      attempts++
+      setTimeout(trySync, 200)
+    } catch (error) {
+      console.log('setLyric同步失败:', error)
     }
-  } catch (error) {
-    console.log('setLyric同步失败:', error)
   }
+  
+  setTimeout(trySync, 200)
 }
