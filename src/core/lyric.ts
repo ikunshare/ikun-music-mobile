@@ -112,15 +112,8 @@ export const setLyric = async () => {
     await handleSetLyric(playerState.musicInfo.lrc, tlrc, rlrc)
   }
 
-  // 修复:歌词加载完成后,如果播放器正在播放,需要延迟后同步歌词
-  // 原因:新加入的本地歌曲首次播放时,歌词加载完成时播放器位置可能还是初始值(接近0)
-  // 使用500ms延迟确保播放器位置已经稳定更新
-  if (playerState.isPlay) {
-    setTimeout(() => {
-      // 再次检查播放状态,避免在延迟期间用户暂停了播放
-      if (playerState.isPlay) {
-        play()
-      }
-    }, 500)
-  }
+  // 修复:歌词加载完成后,无条件触发play事件
+  // 这确保歌词播放器能正确启动,即使在首次播放的时序竞争情况下
+  // play()内部会检查playerState.isPlay,所以这是安全的
+  play()
 }
