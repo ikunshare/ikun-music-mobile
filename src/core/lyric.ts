@@ -112,14 +112,5 @@ export const setLyric = async () => {
     await handleSetLyric(playerState.musicInfo.lrc, tlrc, rlrc)
   }
 
-  // 修复:无论播放状态如何,都尝试同步歌词到当前播放位置
-  // 这解决了本地歌曲加载时歌词定位不准确的问题
-  if (playerState.musicInfo.id) {
-    // 延迟执行以确保播放器状态已更新
-    setTimeout(() => {
-      if (playerState.musicInfo.id) {
-        play()
-      }
-    }, 100)
-  }
+  if (playerState.isPlay) play()
 }

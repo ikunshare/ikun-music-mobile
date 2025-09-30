@@ -32,6 +32,8 @@ import { state } from '@/plugins/player/playList';
 const setPlaybackPosition = async (timestamp: number) => {
     if (global.player) {
         global.player.currentTime = timestamp; // 设置播放器当前时间
+        global.app_event?.setProgress(timestamp / 1000); // 更新播放进度
+        global.app_event?.lyricUpdated(); // 更新歌词事件
     }
 };
 
@@ -87,7 +89,16 @@ export default async (setting: LX.AppSetting) => {
         }
     });
 
-    global.app_event?.on?.('play', play);
+    // 修复本地歌曲歌词定位问题:
+    // 当播放开始时,如果已有歌词则同步到当前播放位置
+    const handlePlayForLyric = () => {
+        // 延迟执行以确保歌词已加载
+        setTimeout(() => {
+            play();
+        }, 100);
+    };
+
+    global.app_event?.on?.('play', handlePlayForLyric);
     global.app_event?.on?.('pause', pause);
     global.app_event?.on?.('stop', stop);
     global.app_event?.on?.('error', pause);
