@@ -112,15 +112,15 @@ export const setLyric = async () => {
     await handleSetLyric(playerState.musicInfo.lrc, tlrc, rlrc)
   }
 
-  // 修复:歌词加载完成后,获取当前播放位置并同步
-  console.log('[Lyric Debug] setLyric called, isPlay:', playerState.isPlay)
-  void getPosition().then((position) => {
-    console.log('[Lyric Debug] getPosition result:', position)
-    if (position >= 0) {
-      console.log('[Lyric Debug] Calling handlePlay with position:', position * 1000)
-      handlePlay(position * 1000)
-    } else {
-      console.log('[Lyric Debug] Position is negative, skipping handlePlay')
-    }
-  })
+  // 修复:歌词加载完成后,如果正在播放则同步
+  // 同时延迟1秒后再次同步,确保首次播放时能正确定位
+  if (playerState.isPlay) {
+    play()
+    // 延迟后再次同步,解决首次播放时位置未及时更新的问题
+    setTimeout(() => {
+      if (playerState.isPlay) {
+        play()
+      }
+    }, 1000)
+  }
 }
