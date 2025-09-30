@@ -9,6 +9,7 @@ import playerState from '@/store/player/state'
 import settingState from '@/store/setting/state'
 import { onScreenStateChange } from '@/utils/nativeModules/utils'
 import { AppState } from 'react-native'
+import { handlePlay as lyricHandlePlay } from '@/core/lyric'
 
 const delaySavePlayInfo = throttleBackgroundTimer(() => {
   void savePlayInfo({
@@ -32,6 +33,8 @@ export default () => {
       if (!position || id != playerState.musicInfo.id) return
       setNowPlayTime(position)
       if (!playerState.isPlay) return
+      // 同步歌词到当前播放位置，确保本地歌曲首次播放能正确推进
+      lyricHandlePlay(position * 1000)
 
       if (
         settingState.setting['player.isSavePlayTime'] &&
@@ -85,6 +88,8 @@ export default () => {
     // console.log('setProgress', time, maxTime)
     setNowPlayTime(time)
     void setCurrentTime(time)
+    // 进度变更时立即同步歌词，修复拖动/首次播放时的歌词停滞
+    lyricHandlePlay(time * 1000)
 
     if (maxTime != null) setMaxplayTime(maxTime)
 
