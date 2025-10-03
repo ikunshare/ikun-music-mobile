@@ -24,6 +24,8 @@ export default () => {
   // const updateMusicInfo = useCommit('list', 'updateMusicInfo')
 
   let updateTimeout: number | null = null
+  let lyricSyncTimeout: number | null = null  // 歌词同步超时处理
+  let hasTriggeredLyricSync = false  // 是否已触发歌词同步
 
   let isScreenOn = true
 
@@ -34,7 +36,17 @@ export default () => {
       setNowPlayTime(position)
       if (!playerState.isPlay) return
       // 同步歌词到当前播放位置，确保本地歌曲首次播放能正确推进
-      lyricHandlePlay(position * 1000)
+      // 添加日志以便调试歌词同步问题
+      if (position > 0.1) {
+        lyricHandlePlay(position * 1000)
+        // 标记已触发歌词同步，避免执行备用方案
+        if (!hasTriggeredLyricSync && lyricSyncTimeout) {
+          hasTriggeredLyricSync = true
+          BackgroundTimer.clearTimeout(lyricSyncTimeout)
+          lyricSyncTimeout = null
+          console.log('歌词同步已成功，取消备用方案')
+        }
+      }
 
       if (
         settingState.setting['player.isSavePlayTime'] &&
@@ -89,7 +101,10 @@ export default () => {
     setNowPlayTime(time)
     void setCurrentTime(time)
     // 进度变更时立即同步歌词，修复拖动/首次播放时的歌词停滞
-    lyricHandlePlay(time * 1000)
+    // 只有当时间大于0.1秒时才同步歌词，避免position为0时导致歌词卡在第一行
+    if (time > 0.1) {
+      lyricHandlePlay(time * 1000)
+    }
 
     if (maxTime != null) setMaxplayTime(maxTime)
 
@@ -101,12 +116,51 @@ export default () => {
     // prevProgressStatus = 'normal'
     // handleSetTaskBarState(playProgress.progress, prevProgressStatus)
     startUpdateTimeout()
+    
+    // 重置歌词同步标志
+    hasTriggeredLyricSync = false
+    
+    // 清除之前的歌词同步超时
+    if (lyricSyncTimeout) {
+      BackgroundTimer.clearTimeout(lyricSyncTimeout)
+      lyricSyncTimeout = null
+    }
+    
+    // 设置2秒后的歌词同步超时处理
+    lyricSyncTimeout = BackgroundTimer.setTimeout(() => {
+      // 如果2秒后还没有触发过歌词同步，则执行短暂暂停再恢复的操作
+      if (!hasTriggeredLyricSync && playerState.isPlay && playerState.musicInfo.id) {
+        console.log('执行歌词同步备用方案: 短暂暂停后恢复')
+        
+        // 记录当前播放位置
+        void getPosition().then((position) => {
+          if (position > 0.1) {
+            // 短暂暂停
+            global.app_event?.pause?.()
+            
+            // 100ms后立即恢复播放，确保歌词同步
+            BackgroundTimer.setTimeout(() => {
+              if (playerState.musicInfo.id) {
+                global.app_event?.play?.()
+                console.log('歌词同步备用方案执行完成')
+              }
+            }, 100)
+          }
+        })
+      }
+    }, 2000)
   }
   const handlePause = () => {
     // prevProgressStatus = 'paused'
     // handleSetTaskBarState(playProgress.progress, prevProgressStatus)
     // clearBufferTimeout()
     clearUpdateTimeout()
+    
+    // 清除歌词同步超时
+    if (lyricSyncTimeout) {
+      BackgroundTimer.clearTimeout(lyricSyncTimeout)
+      lyricSyncTimeout = null
+    }
   }
 
   const handleStop = () => {
@@ -115,6 +169,13 @@ export default () => {
     setMaxplayTime(0)
     // prevProgressStatus = 'none'
     // handleSetTaskBarState(playProgress.progress, prevProgressStatus)
+    
+    // 清除歌词同步超时
+    if (lyricSyncTimeout) {
+      BackgroundTimer.clearTimeout(lyricSyncTimeout)
+      lyricSyncTimeout = null
+    }
+    hasTriggeredLyricSync = false
   }
 
   const handleError = () => {

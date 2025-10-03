@@ -122,12 +122,18 @@ export const setLyric = async () => {
     try {
       const playbackState = await TrackPlayer.getState()
       if (playbackState !== TPState.Playing && playbackState !== TPState.Buffering) {
+        // 如果不在播放或缓冲状态，继续尝试
+        if (attempts < maxAttempts) {
+          attempts++
+          setTimeout(trySync, 200)
+        }
         return
       }
       
       const position = await getPosition()
       if (position > 0.1 || attempts >= maxAttempts) {
         // position已经大于0.1秒,或者已达到最大尝试次数,进行同步
+        console.log('歌词同步成功, position:', position, 'attempts:', attempts)
         handlePlay(position * 1000)
         return
       }
@@ -137,8 +143,14 @@ export const setLyric = async () => {
       setTimeout(trySync, 200)
     } catch (error) {
       console.log('setLyric同步失败:', error)
+      // 出错时也继续尝试，直到达到最大尝试次数
+      if (attempts < maxAttempts) {
+        attempts++
+        setTimeout(trySync, 200)
+      }
     }
   }
   
-  setTimeout(trySync, 200)
+  // 立即尝试一次同步，然后再开始轮询
+  trySync()
 }

@@ -6,6 +6,7 @@ import {
   setPlay,
   setResource,
   setStop,
+  getPosition,
 } from '@/plugins/player'
 import { setStatusText } from '@/core/player/playStatus'
 import playerState from '@/store/player/state'
@@ -256,7 +257,22 @@ const debouncePlay = debounceBackgroundTimer((musicInfo: LX.Player.PlayMusic) =>
         rlrc: lyricInfo.rlyric,
         rawlrc: lyricInfo.rawlrcInfo.lyric,
       })
+      // 触发歌词更新事件
       global.app_event?.lyricUpdated?.()
+      
+      // 针对本地歌曲，在歌词加载后立即尝试同步一次
+      // 解决本地歌曲首次播放时歌词卡在第一行的问题
+      if (('filePath' in musicInfo && musicInfo.filePath) ||
+          ('meta' in musicInfo && 'filePath' in musicInfo.meta)) {
+        setTimeout(() => {
+          void getPosition().then((position: number) => {
+            if (position > 0.1 && musicInfo.id == playerState.playMusicInfo.musicInfo?.id) {
+              console.log('本地歌曲歌词加载后同步:', position)
+              global.app_event?.setProgress?.(position)
+            }
+          })
+        }, 300) // 延迟300ms，确保播放器已开始播放
+      }
     })
     .catch((err) => {
       console.log(err)
