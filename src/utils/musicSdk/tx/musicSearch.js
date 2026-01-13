@@ -8,60 +8,69 @@ export default {
   page: 0,
   allPage: 1,
   successCode: 0,
-  randomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min
-  },
-  getSearchId() {
-    const e = this.randomInt(1, 20)
-    const t = Number(e * Number('18014398509481984').toFixed())
-    const n = this.randomInt(0, 4194304) * 4294967296
-    const a = Date.now()
-    const r = Math.round(a * 1000) % (24 * 60 * 60 * 1000)
-    return String(t + n + r)
-  },
   musicSearch(str, page, limit, retryNum = 0) {
     if (retryNum > 5) return Promise.reject(new Error('搜索失败'))
     const searchRequest = httpFetch('https://u.y.qq.com/cgi-bin/musicu.fcg', {
       method: 'post',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)',
+        'User-Agent': 'QQMusic 14090508(android 12)',
       },
       body: {
         comm: {
-          ct: 11,
-          cv: '1003006',
-          v: '1003006',
+          ct: '11',
+          cv: '14090508',
+          v: '14090508',
+          tmeAppID: 'qqmusic',
+          phonetype: 'EBG-AN10',
+          deviceScore: '553.47',
+          devicelevel: '50',
+          newdevicelevel: '20',
+          rom: 'HuaWei/EMOTION/EmotionUI_14.2.0',
           os_ver: '12',
-          phonetype: '0',
-          devicelevel: '31',
-          tmeAppID: 'qqmusiclight',
-          nettype: 'NETWORK_WIFI',
+          OpenUDID: '0',
+          OpenUDID2: '0',
+          QIMEI36: '0',
+          udid: '0',
+          chid: '0',
+          aid: '0',
+          oaid: '0',
+          taid: '0',
+          tid: '0',
+          wid: '0',
+          uid: '0',
+          sid: '0',
+          modeSwitch: '6',
+          teenMode: '0',
+          ui_mode: '2',
+          nettype: '1020',
+          v4ip: '',
         },
         req: {
           module: 'music.search.SearchCgiService',
           method: 'DoSearchForQQMusicMobile',
           param: {
-            searchid: this.getSearchId(),
-            query: str,
             search_type: 0,
-            num_per_page: limit,
+            query: str,
             page_num: page,
-            highlight: true,
-            grp: true,
+            num_per_page: limit,
+            highlight: 0,
+            nqc_flag: 0,
+            multi_zhida: 0,
+            cat: 2,
+            grp: 1,
+            sin: 0,
+            sem: 0,
           },
         },
       },
     })
-    // searchRequest = httpFetch(`http://ioscdn.kugou.com/api/v3/search/song?keyword=${encodeURIComponent(str)}&page=${page}&pagesize=${this.limit}&showtype=10&plat=2&version=7910&tag=1&correct=1&privilege=1&sver=5`)
     return searchRequest.promise.then(({ body }) => {
-      // console.log(body)
       if (body.code != this.successCode || body.req.code != this.successCode)
         return this.musicSearch(str, page, limit, ++retryNum)
       return body.req.data
     })
   },
   handleResult(rawList) {
-    // console.log(rawList)
     const list = []
     rawList.forEach((item) => {
       if (!item.file?.media_mid) return
@@ -118,7 +127,7 @@ export default {
           size,
         }
       }
-      // types.reverse()
+
       let albumId = ''
       let albumName = ''
       if (item.album) {
@@ -147,12 +156,10 @@ export default {
         typeUrl: {},
       })
     })
-    // console.log(list)
     return list
   },
   search(str, page = 1, limit) {
     if (limit == null) limit = this.limit
-    // http://newlyric.kuwo.cn/newlyric.lrc?62355680
     return this.musicSearch(str, page, limit).then(({ body, meta }) => {
       let list = this.handleResult(body.item_song)
 
