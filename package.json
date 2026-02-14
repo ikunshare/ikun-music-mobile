@@ -1,7 +1,7 @@
 {
   "name": "ikun-music-mobile",
-  "version": "1.8.8",
-  "versionCode": 77,
+  "version": "1.8.9",
+  "versionCode": 78,
   "private": true,
   "scripts": {
     "dev": "react-native run-android --active-arch-only",
@@ -32,8 +32,8 @@
     "react-native-app"
   ],
   "author": {
-    "name": "lyswhut",
-    "email": "lyswhut@qq.com"
+    "name": "ikunshare",
+    "email": "ikun0014@qq.com"
   },
   "license": "Apache-2.0",
   "bugs": {
